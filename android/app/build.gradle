@@ -1,0 +1,105 @@
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+android {
+    namespace "com.example.xsense_demo"
+    compileSdkVersion 35
+
+    defaultConfig {
+        applicationId "com.example.xsense_demo"
+        minSdkVersion 26
+        targetSdkVersion 35
+        versionCode flutter.versionCode
+        versionName flutter.versionName
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    aaptOptions {
+        noCompress 'tflite'
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_11.toString()
+    }
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        // No declares 'release' aquí si no lo usas
+    }
+
+    buildTypes {
+    debug {
+        debuggable true
+    }
+    release {
+        minifyEnabled false
+        shrinkResources false
+        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+    }
+}
+
+
+/*
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "app-${variant.buildType.name}.apk"
+        }
+    }
+*/
+}
+
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation files('libs/Xsens_DOT_SDK_Core_Android_v2023.0.0-release_stable_b303_r121439.aar')
+}
+
+flutter {
+    source = "../.."
+}
+
+afterEvaluate {
+  android.applicationVariants.all { variant ->
+    if (variant.buildType.name == "debug") {
+      variant.outputs.all { output ->
+        // Ruta del APK generado por el módulo :app
+        def apkSrc = output.outputFile
+        // Ruta de destino en la raíz de tu proyecto Flutter
+        def apkDest = new File(rootProject.projectDir,
+            "build/app/outputs/flutter-apk/app-debug.apk")
+
+        // Tarea que copia
+        tasks.register("copyDebugApkToFlutterRoot", Copy) {
+          from apkSrc
+          into apkDest.parentFile
+          rename { "app-debug.apk" }
+        }
+
+        // Ejecutar la copia justo después de ensamblar el debug
+        tasks.named("assembleDebug").configure {
+          finalizedBy "copyDebugApkToFlutterRoot"
+        }
+      }
+    }
+  }
+}
+
+

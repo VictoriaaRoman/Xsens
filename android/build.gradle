@@ -1,0 +1,31 @@
+buildscript {
+    ext.kotlin_version = '1.8.22'   // Ajusta la versión de Kotlin si la tuya es otra
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // Este es el AGP que Flutter necesita para detectar el .apk
+        classpath 'com.android.tools.build:gradle:8.7.0'
+        // El plugin de Kotlin
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        flatDir {
+            dirs 'libs'
+        }
+    }
+}
+
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.layout.buildDirectory
+}
