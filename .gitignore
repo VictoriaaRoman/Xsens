@@ -50,3 +50,6 @@ android/app/build/
 *.apk
 *.aar
 *.jks
+*.mp4
+*.zip
+*.csv
