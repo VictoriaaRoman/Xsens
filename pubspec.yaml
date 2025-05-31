@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   permission_handler: ^11.0.1
+  fl_chart: ^0.64.0 # o la más reciente
 
 dev_dependencies:
   flutter_test:

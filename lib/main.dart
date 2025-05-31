@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:xsense_demo/services/xsens_service.dart';
 import 'screens/home_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized(); // <-- MUY IMPORTANTE
+
+  // 1) Inicializar XsensService para que ya esté escuchando invocaciones nativas.
+  XsensService.initialize();
+
+  // 2) Ya puedes arrancar la aplicación.
   runApp(const MyApp());
 }
 

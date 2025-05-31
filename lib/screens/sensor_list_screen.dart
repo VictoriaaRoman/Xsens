@@ -28,25 +28,31 @@ class _SensorListScreenState extends State<SensorListScreen> {
         connectionStatus[address] = connected;
       });
     });
+
     _startScanning();
   }
 
-
   void _listenToSensorStream() {
     XsensService.sensorStream.listen((sensor) {
-      if (!sensors.any((s) => s['address'] == sensor['address'])) {
-        setState(() {
+      setState(() {
+        final index = sensors.indexWhere((s) => s['address'] == sensor['address']);
+        if (index != -1) {
+          // Actualizar nombre si ya existía
+          sensors[index]['name'] = sensor['name'] ?? sensors[index]['name']!;
+        } else {
           sensors.add(sensor);
-        });
-      }
+        }
+      });
     });
   }
+
 
   void _startScanning() async {
     await XsensService.requestBluetoothScanPermission();
     await XsensService.startScan();
   }
 
+  int get connectedCount => connectionStatus.values.where((e) => e).length;
 
   Future<void> _connectToSensor(String sensorId) async {
     try {
@@ -55,7 +61,7 @@ class _SensorListScreenState extends State<SensorListScreen> {
         connectionStatus[sensorId] = true;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Conectado a $sensorId')),
+        SnackBar(content: Text('Sensores conectados: $connectedCount')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -64,18 +70,6 @@ class _SensorListScreenState extends State<SensorListScreen> {
     }
   }
 
-/*
-  static void listenConnectionEvents(
-      Function(String) onConnected, Function(String) onDisconnected) {
-    _channel.setMethodCallHandler((call) async {
-      if (call.method == 'onSensorConnected') {
-        onConnected(call.arguments as String);
-      } else if (call.method == 'onSensorDisconnected') {
-        onDisconnected(call.arguments as String);
-      }
-    });
-  }
-*/
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,34 +77,37 @@ class _SensorListScreenState extends State<SensorListScreen> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
-            itemCount: sensors.length,
-            itemBuilder: (context, index) {
-              final sensor = sensors[index];
-              final address = sensor['address'] ?? '';
-              final isConnected = connectionStatus[address] ?? false;
+              itemCount: sensors.length,
+              itemBuilder: (context, index) {
+                final sensor = sensors[index];
+                final address = sensor['address'] ?? '';
+                final isConnected = connectionStatus[address] ?? false;
 
-              return ListTile(
-                title: Text(sensor['name'] ?? 'Sin nombre'),
-                subtitle: Text(address),
-                trailing: Switch(
-                  value: isConnected,
-                  onChanged: (value) async {
-                    if (value) {
-                      await _connectToSensor(address);
-                    } else {
-                      await XsensService.disconnectFromSensor(address);
-                      setState(() {
-                        connectionStatus[address] = false;
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Desconectado de $address')),
-                      );
-                    }
-                  },
-                ),
-              );
-            },
-          ),
+                return Card(
+                  color: isConnected ? Colors.green[100] : null,
+                  child: ListTile(
+                    title: Text(sensor['name'] ?? 'Sin nombre'),
+                    subtitle: Text(address),
+                    trailing: Switch(
+                      value: isConnected,
+                      onChanged: (value) async {
+                        if (value) {
+                          await _connectToSensor(address);
+                        } else {
+                          await XsensService.disconnectFromSensor(address);
+                          setState(() {
+                            connectionStatus[address] = false;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Sensores conectados: $connectedCount')),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
