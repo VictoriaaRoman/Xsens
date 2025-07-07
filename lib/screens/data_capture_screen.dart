@@ -13,17 +13,15 @@ class DataCaptureScreen extends StatefulWidget {
 class _DataCaptureScreenState extends State<DataCaptureScreen> {
   final List<String> connectedSensors = [];
   final Map<String, Map<String, List<FlSpot>>> sensorData = {};
-  final Map<String, String> sensorNames = {}; // address -> tag
-  final List<String> dataTypes = ['accX', 'accY', 'accZ', 'gyrX', 'gyrY', 'gyrZ', 'magX', 'magY', 'magZ', 'yaw', 'pitch', 'roll'];
   final Map<String, String> sensorNames = {}; 
 
   final Map<String, String> dataLabels = {
-    'accX': 'Aceleración en la dirección vertical',
-    'gyrY': 'Velocidad angular del movimiento',
-    'yaw': 'Ángulo respecto del plano horizontal',
+    'freeAccZ': 'Aceleración en la dirección vertical',
+    'gyrMag': 'Velocidad angular del movimiento',
+    'inclinationAngle': 'Ángulo respecto del plano horizontal',
   };
 
-  final List<String> dataTypes = ['accX', 'gyrY', 'yaw'];
+  final List<String> dataTypes = ['freeAccZ', 'gyrMag', 'inclinationAngle'];
 
   StreamSubscription? _dataSubscription;
   StreamSubscription? _connectionSubscription;
@@ -33,13 +31,11 @@ class _DataCaptureScreenState extends State<DataCaptureScreen> {
     super.initState();
     XsensService.startMeasuring();
 
-    // Escucha datos
     _dataSubscription = XsensService.sensorDataStream.listen((event) {
       final address = event['address'] ?? '';
       final timestamp = DateTime.now().millisecondsSinceEpoch.toDouble();
 
       setState(() {
-        // Añade sensor si no está
         if (!connectedSensors.contains(address)) {
           connectedSensors.add(address);
         }
@@ -57,7 +53,6 @@ class _DataCaptureScreenState extends State<DataCaptureScreen> {
       });
     });
 
-    // Escucha conexiones
     _connectionSubscription = XsensService.connectionStatusStream.listen((event) {
       final address = event['address'] ?? '';
       final connected = event['connected'] ?? false;
@@ -71,7 +66,6 @@ class _DataCaptureScreenState extends State<DataCaptureScreen> {
       });
     });
 
-    // Escucha nombres
     XsensService.sensorStream.listen((sensor) {
       final address = sensor['address'] ?? '';
       final name = sensor['name'] ?? '';
@@ -91,12 +85,12 @@ class _DataCaptureScreenState extends State<DataCaptureScreen> {
 
   double getMinY(String type) {
     switch (type) {
-      case 'yaw':
-        return -100;
-      case 'accX':
+      case 'inclinationAngle':
+        return -90;
+      case 'freeAccZ':
         return -10;
-      case 'gyrY':
-        return -500;
+      case 'gyrMag':
+        return 0; // La magnitud del giro no debería ser negativa
       default:
         return -10;
     }
@@ -104,11 +98,11 @@ class _DataCaptureScreenState extends State<DataCaptureScreen> {
 
   double getMaxY(String type) {
     switch (type) {
-      case 'yaw':
+      case 'inclinationAngle':
+        return 90;
+      case 'freeAccZ':
         return 10;
-      case 'accX':
-        return 10;
-      case 'gyrY':
+      case 'gyrMag':
         return 500;
       default:
         return 10;
@@ -116,17 +110,17 @@ class _DataCaptureScreenState extends State<DataCaptureScreen> {
   }
 
   Color getColorByValue(String type, double value) {
-    if (type == 'yaw') {
-      if (value > -30) return Colors.red;
-      if (value > -60) return Colors.orange;
+    if (type == 'inclinationAngle') {
+      if (value.abs() >= 45) return Colors.green;
+      if (value.abs() >= 15) return Colors.orange;
+      return Colors.red;
+    } else if (type == 'freeAccZ') {
+      if (value.abs() <= 4) return Colors.red;
+      if (value.abs() <= 7) return Colors.orange;
       return Colors.green;
-    } else if (type == 'accX') {
-      if (value < -5) return Colors.red;
-      if (value < 5) return Colors.orange;
-      return Colors.green;
-    } else if (type == 'gyrY') {
-      if (value.abs() < 100) return Colors.green;
-      if (value.abs() < 300) return Colors.orange;
+    } else if (type == 'gyrMag') {
+      if (value > 100) return Colors.orange;
+      if (value > 200) return Colors.green;
       return Colors.red;
     }
     return Colors.blue;

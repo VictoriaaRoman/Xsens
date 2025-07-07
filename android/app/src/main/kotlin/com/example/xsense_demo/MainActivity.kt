@@ -224,8 +224,8 @@ class MainActivity : FlutterActivity(), XsensDotScannerCallback, XsensDotDeviceC
     override fun onSyncStatusUpdate(address: String, syncStatus: Boolean) { }
 
    override fun onXsensDotDataChanged(address: String, data: XsensDotData) {
-        // Aceleración (m/s²)
-        val acc = data.getAcc().map { it.toFloat() }.toFloatArray()
+        // Aceleración libre (sin gravedad) (m/s²)
+        val freeAcc = data.getCalFreeAcc()
 
         // Velocidad angular (deg/s)
         val gyr = data.getGyr().map { it.toFloat() }.toFloatArray()
@@ -234,30 +234,47 @@ class MainActivity : FlutterActivity(), XsensDotScannerCallback, XsensDotDeviceC
         val mag = data.getMag() // Ya es FloatArray
 
         // Orientación (quaternion → Euler)
-        val quat = data.getQuat() // FloatArray
+        val quat = data.getQuat() // FloatArray con 4 elementos: qx, qy, qz, qw
 
         // Conversión a ángulos de Euler
         val euler = quaternionToEuler(quat)
 
+        // Angulo de inclinación respecto el plano horizontal
+        val inclinationAngle = computeInclinationAngleFromQuat(quat)
+
+
+        // Calcula magnitud total del giro
+        val gyrMag = Math.sqrt(
+            (gyr[0] * gyr[0] + gyr[1] * gyr[1] + gyr[2] * gyr[2]).toDouble()
+        )
+
         // Map para enviar a Flutter
         val sensorData = mapOf<String, Any>(
             "address" to address,
-            // Aceleración
-            "accX" to acc[0],
-            "accY" to acc[1],
-            "accZ" to acc[2],
+            // Aceleración libre
+            "freeAccX" to freeAcc[0].toDouble(),
+            "freeAccY" to freeAcc[1].toDouble(),
+            "freeAccZ" to freeAcc[2].toDouble(),
             // Giroscopio
             "gyrX" to gyr[0],
             "gyrY" to gyr[1],
             "gyrZ" to gyr[2],
+            "gyrMag" to gyrMag,
             // Magnetómetro
-            "magX" to mag[0].toDouble(),
-            "magY" to mag[1].toDouble(),
-            "magZ" to mag[2].toDouble(),
+            //"magX" to mag[0].toDouble(),
+            //"magY" to mag[1].toDouble(),
+            //"magZ" to mag[2].toDouble(),
             // Orientación (Euler angles)
-            "yaw"   to euler[0],
-            "pitch" to euler[1],
-            "roll"  to euler[2]
+            //"yaw"   to euler[0],
+            //"pitch" to euler[1],
+            //"roll"  to euler[2]
+            // Enviar los cuaterniones directamente
+            //"quatX" to quat[0].toDouble(),
+            //"quatY" to quat[1].toDouble(),
+            //"quatZ" to quat[2].toDouble(),
+            //"quatW" to quat[3].toDouble(),
+            "inclinationAngle" to inclinationAngle
+
         )
 
         // Envía los datos a Flutter
@@ -279,4 +296,44 @@ fun quaternionToEuler(q: FloatArray): DoubleArray {
 
     return doubleArrayOf(yaw, pitch, roll)
 }
+fun quaternionToRotationMatrix(q: FloatArray): Array<DoubleArray> {
+    val qw = q[3].toDouble()
+    val qx = q[0].toDouble()
+    val qy = q[1].toDouble()
+    val qz = q[2].toDouble()
+
+    return arrayOf(
+        doubleArrayOf(
+            qw*qw + qx*qx - qy*qy - qz*qz,
+            2.0 * (qx*qy - qw*qz),
+            2.0 * (qx*qz + qw*qy)
+        ),
+        doubleArrayOf(
+            2.0 * (qx*qy + qw*qz),
+            qw*qw - qx*qx + qy*qy - qz*qz,
+            2.0 * (qy*qz - qw*qx)
+        ),
+        doubleArrayOf(
+            2.0 * (qx*qz - qw*qy),
+            2.0 * (qy*qz + qw*qx),
+            qw*qw - qx*qx - qy*qy + qz*qz
+        )
+    )
+}
+fun computeInclinationAngleFromQuat(q: FloatArray): Double {
+    val qw = q[3].toDouble()
+    val qx = q[0].toDouble()
+    val qy = q[1].toDouble()
+    val qz = q[2].toDouble()
+
+    // R[2][0] = 2*(qx*qz - qw*qy)
+    val R_31 = 2.0 * (qx * qz - qw * qy)
+
+    // Asegurar dominio válido [-1, 1]
+    val angle = -(Math.acos(R_31.coerceIn(-1.0, 1.0)) * 180.0 / Math.PI - 90.0)
+
+    return angle
+}
+
+
 
