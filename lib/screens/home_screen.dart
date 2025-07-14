@@ -1,7 +1,8 @@
+// home_screen.dart (actualizado)
 import 'package:flutter/material.dart';
 import 'sensor_list_screen.dart';
-import 'data_capture_screen.dart'; // 👈 Asegúrate de importar esto
-
+import 'data_capture_screen.dart';
+import 'game_menu_screen.dart'; // 👈 Importar nueva pantalla
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -23,7 +24,7 @@ class HomeScreen extends StatelessWidget {
               },
               child: const Text('Conectar sensores'),
             ),
-            const SizedBox(height: 16), // Espaciado entre botones
+            const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () {
                 Navigator.push(
@@ -33,6 +34,17 @@ class HomeScreen extends StatelessWidget {
               },
               icon: const Icon(Icons.bar_chart),
               label: const Text('Capturar datos'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const GameMenuScreen()),
+                );
+              },
+              icon: const Icon(Icons.videogame_asset),
+              label: const Text('Jugar'),
             ),
           ],
         ),

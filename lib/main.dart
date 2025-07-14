@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:xsense_demo/services/xsens_service.dart';
 import 'screens/home_screen.dart';
+import 'screens/game_menu_screen.dart'; // <-- Asegúrate de importar la pantalla
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized(); // <-- MUY IMPORTANTE
@@ -19,7 +20,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Xsens Demo',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const HomeScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomeScreen(),
+        '/game_menu_screen': (context) => const GameMenuScreen(), // <-- Añade esta línea
+        // ...otras rutas...
+      },
     );
   }
 }

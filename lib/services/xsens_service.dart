@@ -93,6 +93,11 @@ class XsensService {
           final tag = tagData['tag'] as String;
           sensorTags[address] = tag;
           break;
+        case 'onConnectionChanged':
+          final conn = Map<String, dynamic>.from(call.arguments);
+          _connectionStatusController.add(conn);
+          break;
+
       }
     });
   }
