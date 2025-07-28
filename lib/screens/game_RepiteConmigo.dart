@@ -350,57 +350,52 @@ class _InclinationGaugePainter extends CustomPainter {
   final double angle;
   final double minAngle;
   final double maxAngle;
-  final double targetAngle; // <-- NUEVO
+  final double targetAngle;
 
   _InclinationGaugePainter({
     required this.angle,
     required this.minAngle,
     required this.maxAngle,
-    required this.targetAngle, // <-- NUEVO
+    required this.targetAngle,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 8;
+    final radius = size.height / 2 - 8;
     final rect = Rect.fromCircle(center: center, radius: radius);
 
-    // Semicírculo
     final arcPaint = Paint()
       ..color = Colors.grey.shade300
       ..style = PaintingStyle.stroke
       ..strokeWidth = 10;
-    canvas.drawArc(rect, math.pi, math.pi, false, arcPaint);
 
-    // Línea azul en el objetivo
-    final normalizedTarget = ((targetAngle - minAngle) / (maxAngle - minAngle)).clamp(0.0, 1.0);
-    final thetaTarget = math.pi + normalizedTarget * math.pi;
-    final targetPaint = Paint()
-      ..color = Colors.blue
-      ..strokeWidth = 2;
+    // Semicírculo vertical: -90° abajo, +90° arriba
+    canvas.drawArc(rect, -math.pi / 2, math.pi, false, arcPaint);
+
+    double mapAngleToRadian(double value) {
+      final normalized = ((value - minAngle) / (maxAngle - minAngle)).clamp(0.0, 1.0);
+      return (-math.pi / 2) + normalized * math.pi;
+    }
+
+    // Línea azul (objetivo)
+    final thetaTarget = mapAngleToRadian(targetAngle);
     final targetX = center.dx + radius * math.cos(thetaTarget);
-    final targetY = center.dy + radius * math.sin(thetaTarget);
-    canvas.drawLine(
-      center,
-      Offset(targetX, targetY),
-      targetPaint,
-    );
+    final targetY = center.dy - radius * math.sin(thetaTarget);
+    canvas.drawLine(center, Offset(targetX, targetY), Paint()
+      ..color = Colors.blue
+      ..strokeWidth = 2);
 
-    // Ángulo actual (rojo)
-    final normalized = ((angle - minAngle) / (maxAngle - minAngle)).clamp(0.0, 1.0);
-    final theta = math.pi + normalized * math.pi;
-    final markerPaint = Paint()
-      ..color = Colors.red
-      ..strokeWidth = 4;
+    // Línea roja (valor actual)
+    final theta = mapAngleToRadian(angle);
     final markerX = center.dx + radius * math.cos(theta);
-    final markerY = center.dy + radius * math.sin(theta);
-    canvas.drawLine(
-      center,
-      Offset(markerX, markerY),
-      markerPaint,
-    );
+    final markerY = center.dy - radius * math.sin(theta);
+    canvas.drawLine(center, Offset(markerX, markerY), Paint()
+      ..color = Colors.red
+      ..strokeWidth = 4);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
+

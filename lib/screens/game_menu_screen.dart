@@ -1,7 +1,8 @@
 // game_menu_screen.dart
 import 'package:flutter/material.dart';
 import 'game_RepiteConmigo.dart';
-import 'package:xsense_demo/screens/game_menu_screen.dart';
+import 'game_Velocidad.dart';
+import 'game_ApuntaYAcierta.dart';
 
 class GameMenuScreen extends StatelessWidget {
   const GameMenuScreen({super.key});
@@ -14,8 +15,8 @@ class GameMenuScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         children: [
           ElevatedButton.icon(
-            icon: const Icon(Icons.rocket_launch),
-            label: const Text('Evita los obstáculos'),
+            icon: const Icon(Icons.repeat),
+            label: const Text('Repite Conmigo'),
             onPressed: () {
               Navigator.push(
                 context,
@@ -23,22 +24,28 @@ class GameMenuScreen extends StatelessWidget {
               );
             },
           ),
-          /*const SizedBox(height: 20),
+          const SizedBox(height: 20),
           ElevatedButton.icon(
-            icon: const Icon(Icons.music_note),
-            label: const Text('Sigue el ritmo'),
+            icon: const Icon(Icons.speed),
+            label: const Text('Velocidad'),
             onPressed: () {
-              // Placeholder para futuros juegos
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => VelocidadScreen()),
+              );
             },
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
-            icon: const Icon(Icons.memory),
-            label: const Text('Repite el patrón'),
+            icon: const Icon(Icons.adjust),
+            label: const Text('Apunta y Acierta'),
             onPressed: () {
-              // Placeholder para futuros juegos
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ApuntaYAciertaScreen()),
+              );
             },
-          ),*/
+          ),
         ],
       ),
     );

@@ -61,6 +61,12 @@ class XsensService {
     await _channel.invokeMethod('stopMeasuring');
   }
 
+  /// Llama al nativo para calibrar el sensor activo
+  static Future<void> calibrateSensor(String address) async {
+    await _channel.invokeMethod('calibrateSensor', {'address': address});
+  }
+
+
   /// Inicializa el canal y gestiona los callbacks nativos
   static void initialize() {
     _channel.setMethodCallHandler((call) async {
