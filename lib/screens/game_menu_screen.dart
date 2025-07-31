@@ -1,5 +1,6 @@
 // game_menu_screen.dart
 import 'package:flutter/material.dart';
+import 'package:xsense_demo/screens/game_AtrapaFrutas.dart';
 import 'game_RepiteConmigo.dart';
 import 'game_Velocidad.dart';
 import 'game_ApuntaYAcierta.dart';
@@ -43,6 +44,17 @@ class GameMenuScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => ApuntaYAciertaScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.apple),
+            label: const Text('Atrapa Frutas'),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AtrapaFrutasScreen()),
               );
             },
           ),
