@@ -21,6 +21,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/PosicionDeCalibracion.jpg
+    - assets/images/PosicionDeCalibracion2.jpg
     - assets/images/apple.png
     - assets/images/bananas.png
     - assets/images/grapes.png

@@ -236,14 +236,14 @@ class _AtrapaFrutasScreenState extends State<AtrapaFrutasScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                "Coloca el sensor como en la imagen",
+                "Coloca el sensor derecho como en la imagen",
                 style: TextStyle(fontSize: 22),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               Image.asset(
-                'assets/images/PosicionDeCalibracion.jpg',
-                width: 320,
+                'assets/images/PosicionDeCalibracion2.jpg',
+                width: 500,
                 fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) =>
                     const Icon(Icons.image_not_supported, size: 90, color: Colors.grey),
