@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../services/xsens_service.dart';
+import '../models/history.dart';
 
 class RepiteConmigoScreen extends StatefulWidget {
   const RepiteConmigoScreen({super.key});
@@ -43,6 +44,8 @@ class _RepiteConmigoScreenState extends State<RepiteConmigoScreen> {
 
   final String leftHandAddress = 'D4:22:CD:00:50:4A';
   final String rightHandAddress = 'D4:22:CD:00:50:60';
+
+  bool historialGuardado = false;
 
   @override
   void initState() {
@@ -192,6 +195,10 @@ class _RepiteConmigoScreenState extends State<RepiteConmigoScreen> {
   @override
   Widget build(BuildContext context) {
     if (currentTarget >= leftTargets.length) {
+      if (!historialGuardado) {
+        guardarResultadosEnHistorial();
+        historialGuardado = true;
+      }
       return _buildResultsScreen(context);
     }
 
@@ -268,38 +275,90 @@ class _RepiteConmigoScreenState extends State<RepiteConmigoScreen> {
   }
 
   Widget _buildResultsScreen(BuildContext context) {
+    final resultados = List.generate(leftAchieved.length, (i) => {
+      'acierto': leftAchieved[i] && rightAchieved[i],
+      'tiempo': (leftTimes[i] + rightTimes[i]) / 2,
+    });
+    final tiempoTotal = leftTimes.fold(0.0, (a, b) => a + b) + rightTimes.fold(0.0, (a, b) => a + b);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Resultados')),
-      body: Column(
-        children: [
-          const SizedBox(height: 16),
-          Text('Resultados:', style: const TextStyle(fontSize: 20)),
-          ...List.generate(leftTargets.length, (i) => ListTile(
-            title: Text('Objetivo ${i + 1}: ${leftAchieved[i] ? "✔️" : "❌"}'),
-            subtitle: Text('Tiempo: ${leftTimes[i].toStringAsFixed(1)} s'),
-          )),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/game_menu_screen');
-            },
-            child: const Text('Ir al menú de juegos'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                currentTarget = 0;
-                leftAchieved.fillRange(0, leftAchieved.length, false);
-                rightAchieved.fillRange(0, rightAchieved.length, false);
-                leftTimes.fillRange(0, leftTimes.length, 0.0);
-                rightTimes.fillRange(0, rightTimes.length, 0.0);
-              });
-              startRound();
-            },
-            child: const Text('Volver a jugar'),
-          ),
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 16),
+            const Icon(Icons.emoji_events, color: Colors.amber, size: 64),
+            const SizedBox(height: 12),
+            const Text('¡Juego terminado!', style: TextStyle(fontSize: 24)),
+            const SizedBox(height: 18),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: resultados.length,
+              itemBuilder: (context, i) {
+                final resultado = resultados[i];
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 6),
+                  child: ListTile(
+                    leading: Icon(
+                      (resultado['acierto'] as bool) ? Icons.check_circle : Icons.cancel,
+                      color: (resultado['acierto'] as bool) ? Colors.green : Colors.red,
+                    ),
+                    title: Text('Objetivo ${i + 1}'),
+                    subtitle: Text('Tiempo: ${resultado['tiempo'] != null ? (resultado['tiempo'] as double).toStringAsFixed(2) : 'N/A'} s'),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 14),
+            Text(
+              resultados.every((r) => r['acierto'] as bool)
+                  ? '¡Has conseguido todos los objetivos!'
+                  : '¡Intenta conseguirlos todos la próxima vez!',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text('Tiempo total: ${tiempoTotal.toStringAsFixed(2)} s', style: const TextStyle(fontSize: 20)),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  currentTarget = 0;
+                  leftAchieved.fillRange(0, leftAchieved.length, false);
+                  rightAchieved.fillRange(0, rightAchieved.length, false);
+                  leftTimes.fillRange(0, leftTimes.length, 0.0);
+                  rightTimes.fillRange(0, rightTimes.length, 0.0);
+                });
+                startRound();
+              },
+              child: const Text('¡Volver a jugar!'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushReplacementNamed(context, '/game_menu_screen');
+              },
+              child: const Text('Ir al menú de juegos'),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
+    );
+  }
+
+  void guardarResultadosEnHistorial() {
+    final total = leftAchieved.length;
+    final aciertosIzq = leftAchieved.where((e) => e).length;
+    final aciertosDer = rightAchieved.where((e) => e).length;
+    final tiempoTotalIzq = leftTimes.fold(0.0, (a, b) => a + b);
+    final tiempoTotalDer = rightTimes.fold(0.0, (a, b) => a + b);
+
+    History.add(
+      actividad: 'Repite Conmigo',
+      resultado: 'Izq: $aciertosIzq/$total ✔️, Der: $aciertosDer/$total ✔️',
+      tiempo: 'Izq: ${tiempoTotalIzq.toStringAsFixed(1)} s, Der: ${tiempoTotalDer.toStringAsFixed(1)} s',
     );
   }
 }

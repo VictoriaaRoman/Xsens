@@ -4,6 +4,7 @@ import 'package:xsense_demo/screens/game_AtrapaFrutas.dart';
 import 'game_RepiteConmigo.dart';
 import 'game_Velocidad.dart';
 import 'game_ApuntaYAcierta.dart';
+import '../widgets/app_drawer.dart'; // Importa el Drawer
 
 class GameMenuScreen extends StatelessWidget {
   const GameMenuScreen({super.key});
@@ -12,6 +13,7 @@ class GameMenuScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Menú de Juegos')),
+      drawer: const AppDrawer(), // <-- Añade el Drawer aquí
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:xsense_demo/models/history.dart';
 import '../services/xsens_service.dart';
 
 // Cambia esto a la dirección MAC de TU sensor derecho
@@ -42,6 +43,9 @@ class _ApuntaYAciertaScreenState extends State<ApuntaYAciertaScreen> {
   double roundElapsed = 0.0;
   double maxRoundTime = 10.0; // segundos para cada objetivo
   Timer? roundTimer;
+
+  // Nueva: Estado para guardar en historial
+  bool historialGuardado = false;
 
   @override
   void initState() {
@@ -148,6 +152,19 @@ class _ApuntaYAciertaScreenState extends State<ApuntaYAciertaScreen> {
     }
   }
 
+  // Nueva: Guardar resultados en el historial
+  void guardarResultadosEnHistorial() {
+    final total = targets.length;
+    final aciertos = achieved.where((e) => e).length;
+    final tiempoTotal = times.fold(0.0, (a, b) => a + b);
+
+    History.add(
+      actividad: 'Apunta y Acierta',
+      resultado: '$aciertos/$total ✔️',
+      tiempo: '${tiempoTotal.toStringAsFixed(1)} s',
+    );
+  }
+
   // ------------ UI PRINCIPAL ------------
   @override
   Widget build(BuildContext context) {
@@ -185,6 +202,10 @@ class _ApuntaYAciertaScreenState extends State<ApuntaYAciertaScreen> {
       );
     }
     if (gameFinished) {
+      if (!historialGuardado) {
+        guardarResultadosEnHistorial();
+        historialGuardado = true;
+      }
       return _buildResultsScreen(context);
     }
     final target = targets[currentTarget];
@@ -253,40 +274,73 @@ class _ApuntaYAciertaScreenState extends State<ApuntaYAciertaScreen> {
   }
 
   Widget _buildResultsScreen(BuildContext context) {
+    final tiempoTotal = times.fold(0.0, (a, b) => a + b);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Resultados')),
-      body: Column(
-        children: [
-          const SizedBox(height: 16),
-          const Text('¡Juego terminado!', style: TextStyle(fontSize: 20)),
-          ...List.generate(targets.length, (i) => ListTile(
-                title: Text('Objetivo ${i + 1}: ${achieved[i] ? "✔️" : "❌"}'),
-                subtitle: Text('Tiempo: ${times[i].toStringAsFixed(1)} s'),
-              )),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/game_menu_screen');
-            },
-            child: const Text('Ir al menú de juegos'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                calibrating = true;
-                calibratingInProgress = false;
-                currentTarget = 0;
-                achieved = List.filled(targets.length, false);
-                times = List.filled(targets.length, 0.0);
-                pointer = Offset(0, 0);
-                gameFinished = false;
-                lastSensorData = null;
-                roundElapsed = 0.0;
-              });
-            },
-            child: const Text('Volver a jugar'),
-          ),
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 16),
+            const Icon(Icons.emoji_events, color: Colors.amber, size: 64),
+            const SizedBox(height: 12),
+            const Text('¡Juego terminado!', style: TextStyle(fontSize: 24)),
+            const SizedBox(height: 18),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: targets.length,
+              itemBuilder: (context, i) {
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 6),
+                  child: ListTile(
+                    leading: Icon(
+                      achieved[i] ? Icons.check_circle : Icons.cancel,
+                      color: achieved[i] ? Colors.green : Colors.red,
+                    ),
+                    title: Text('Objetivo ${i + 1}'),
+                    subtitle: Text('Tiempo: ${times[i].toStringAsFixed(2)} s'),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 14),
+            Text(
+              achieved.every((a) => a)
+                  ? '¡Has conseguido todos los objetivos!'
+                  : '¡Intenta conseguirlos todos la próxima vez!',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text('Tiempo total: ${tiempoTotal.toStringAsFixed(2)} s', style: const TextStyle(fontSize: 20)),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushReplacementNamed(context, '/game_menu_screen');
+              },
+              child: const Text('Ir al menú de juegos'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  calibrating = true;
+                  calibratingInProgress = false;
+                  currentTarget = 0;
+                  achieved = List.filled(targets.length, false);
+                  times = List.filled(targets.length, 0.0);
+                  pointer = Offset(0, 0);
+                  gameFinished = false;
+                  lastSensorData = null;
+                  roundElapsed = 0.0;
+                });
+              },
+              child: const Text('Volver a jugar'),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }

@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   permission_handler: ^11.0.1
   fl_chart: ^0.64.0 # o la más reciente
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:

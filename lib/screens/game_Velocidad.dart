@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:xsense_demo/models/history.dart';
 import 'dart:math' as math;
 import '../services/xsens_service.dart';
 
@@ -43,6 +44,8 @@ class _VelocidadScreenState extends State<VelocidadScreen> {
   Map<String, int> lastSMAIndex = {};
 
   static const double roundDuration = 20.0;
+
+  bool historialGuardado = false;
 
   @override
   void initState() {
@@ -182,9 +185,27 @@ class _VelocidadScreenState extends State<VelocidadScreen> {
     }
   }
 
+  void guardarResultadosEnHistorial() {
+    final total = leftAchieved.length;
+    final aciertosIzq = leftAchieved.where((e) => e).length;
+    final aciertosDer = rightAchieved.where((e) => e).length;
+    final tiempoTotalIzq = leftTimes.fold(0.0, (a, b) => a + b);
+    final tiempoTotalDer = rightTimes.fold(0.0, (a, b) => a + b);
+
+    History.add(
+      actividad: 'Velocidad',
+      resultado: 'Izq: $aciertosIzq/$total ✔️, Der: $aciertosDer/$total ✔️',
+      tiempo: 'Izq: ${tiempoTotalIzq.toStringAsFixed(1)} s, Der: ${tiempoTotalDer.toStringAsFixed(1)} s',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (currentTarget >= totalTargets) {
+      if (!historialGuardado) {
+        guardarResultadosEnHistorial();
+        historialGuardado = true;
+      }
       return _buildResultsScreen(context);
     }
 
@@ -259,37 +280,85 @@ class _VelocidadScreenState extends State<VelocidadScreen> {
   }
 
   Widget _buildResultsScreen(BuildContext context) {
+    final resultados = List.generate(leftAchieved.length, (i) => {
+      'acierto': leftAchieved[i] && rightAchieved[i],
+      'tiempo': ((leftTimes[i] + rightTimes[i]) / 2),
+      'izq': leftAchieved[i],
+      'der': rightAchieved[i],
+      'tiempoIzq': leftTimes[i],
+      'tiempoDer': rightTimes[i],
+    });
+    final tiempoTotalIzq = leftTimes.fold(0.0, (a, b) => a + b);
+    final tiempoTotalDer = rightTimes.fold(0.0, (a, b) => a + b);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Resultados')),
-      body: Column(
-        children: [
-          const SizedBox(height: 16),
-          Text('Resultados:', style: const TextStyle(fontSize: 20)),
-          ...List.generate(totalTargets, (i) => ListTile(
-            title: Text('Objetivo ${i + 1}: ${leftAchieved[i] ? "✔️" : "❌"}'),
-            subtitle: Text('Tiempo: ${leftTimes[i].toStringAsFixed(1)} s'),
-          )),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/game_menu_screen');
-            },
-            child: const Text('Ir al menú de juegos'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                currentTarget = 0;
-                leftAchieved.fillRange(0, leftAchieved.length, false);
-                rightAchieved.fillRange(0, rightAchieved.length, false);
-                leftTimes.fillRange(0, leftTimes.length, 0.0);
-                rightTimes.fillRange(0, rightTimes.length, 0.0);
-              });
-              startRound();
-            },
-            child: const Text('Volver a jugar'),
-          ),
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 16),
+            const Icon(Icons.emoji_events, color: Colors.amber, size: 64),
+            const SizedBox(height: 12),
+            const Text('¡Juego terminado!', style: TextStyle(fontSize: 24)),
+            const SizedBox(height: 18),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: resultados.length,
+              itemBuilder: (context, i) {
+                final r = resultados[i];
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 6),
+                  child: ListTile(
+                    leading: Icon(
+                      ((r['acierto'] ?? false) as bool) ? Icons.check_circle : Icons.cancel,
+                      color: ((r['acierto'] ?? false) as bool) ? Colors.green : Colors.red,
+                    ),
+                    title: Text('Objetivo ${i + 1}'),
+                    subtitle: Text(
+                      'Izq: ${(r['izq'] == true ? "✔️" : "❌")} (${((r['tiempoIzq'] ?? 0.0) as double).toStringAsFixed(2)} s)\n'
+                      'Der: ${(r['der'] == true ? "✔️" : "❌")} (${((r['tiempoDer'] ?? 0.0) as double).toStringAsFixed(2)} s)\n'
+                      'Media: ${(r['tiempo'] is double ? r['tiempo'] as double : 0.0).toStringAsFixed(2)} s',
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 14),
+            Text(
+              resultados.every((r) => (r['acierto'] ?? false) as bool)
+                  ? '¡Has conseguido todos los objetivos!'
+                  : '¡Intenta conseguirlos todos la próxima vez!',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text('Tiempo total Izq: ${tiempoTotalIzq.toStringAsFixed(2)} s', style: const TextStyle(fontSize: 18)),
+            Text('Tiempo total Der: ${tiempoTotalDer.toStringAsFixed(2)} s', style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  currentTarget = 0;
+                  leftAchieved.fillRange(0, leftAchieved.length, false);
+                  rightAchieved.fillRange(0, rightAchieved.length, false);
+                  leftTimes.fillRange(0, leftTimes.length, 0.0);
+                  rightTimes.fillRange(0, rightTimes.length, 0.0);
+                });
+                startRound();
+              },
+              child: const Text('¡Volver a jugar!'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushReplacementNamed(context, '/game_menu_screen');
+              },
+              child: const Text('Ir al menú de juegos'),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }

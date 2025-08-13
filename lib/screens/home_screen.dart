@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'sensor_list_screen.dart';
 import 'data_capture_screen.dart';
 import 'game_menu_screen.dart'; // 👈 Importar nueva pantalla
+import '../widgets/app_drawer.dart'; // Importa el Drawer
+import '../models/history.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -11,6 +13,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Xsens Demo')),
+      drawer: const AppDrawer(), // <-- Añade el Drawer aquí
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

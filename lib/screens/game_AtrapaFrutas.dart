@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:xsense_demo/models/history.dart';
 import '../services/xsens_service.dart';
 
 const String rightHandAddress = 'D4:22:CD:00:50:60';
@@ -73,6 +74,8 @@ class _AtrapaFrutasScreenState extends State<AtrapaFrutasScreen> {
 
   List<Offset> get targets => roundsTargets[currentRound];
   double get maxTotalTime => roundTimes[currentRound];
+
+  bool historialGuardado = false;
 
   @override
   void initState() {
@@ -225,6 +228,22 @@ class _AtrapaFrutasScreenState extends State<AtrapaFrutasScreen> {
     }
   }
 
+  int get frutasTotales => roundsTargets.length * 5;
+  int get frutasAtrapadas => achieved.expand((x) => x).where((b) => b).length;
+  double get tiempoJuego => roundsTimesElapsed.reduce((a, b) => a + b);
+
+  void guardarResultadosEnHistorial() {
+    final total = frutasTotales;
+    final atrapadas = frutasAtrapadas;
+    final tiempoTotal = tiempoJuego;
+
+    History.add(
+      actividad: 'Atrapa Frutas',
+      resultado: '$atrapadas/$total frutas atrapadas',
+      tiempo: '${tiempoTotal.toStringAsFixed(1)} s',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // ---- CALIBRACIÓN AUTOMÁTICA CON CUENTA ATRÁS ----
@@ -297,6 +316,10 @@ class _AtrapaFrutasScreenState extends State<AtrapaFrutasScreen> {
     }
 
     if (gameFinished) {
+      if (!historialGuardado) {
+        guardarResultadosEnHistorial();
+        historialGuardado = true;
+      }
       return _buildResultsScreen(context);
     }
 
